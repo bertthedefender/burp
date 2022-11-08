@@ -1,5 +1,6 @@
 package com.oldspeccy.composetest
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,14 +10,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.oldspeccy.composetest.model.DataItem
+import com.oldspeccy.composetest.viewmodel.DbViewModelFactory
 
 
 class MainActivity : ComponentActivity() {
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
 
         setContent {
             MainScreen()
@@ -26,19 +32,20 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun MainScreen(vm: TestViewModel = viewModel()) {
+fun MainScreen(vm: TestViewModel = viewModel(factory = DbViewModelFactory(LocalContext.current.applicationContext as Application))) {
 
-    var v:Int by vm.count
+    val dataItems = vm.allData.observeAsState(listOf()).value
 
-    Column{
+    Column {
         LazyColumn {
-            items(items = vm.data) {
-                DataItem(it)
+            items(items = dataItems) { dataItem ->
+                DataDetailItem(data = dataItem.name)
             }
         }
         Button(onClick = {
+            var v: Int = dataItems.size
             v = v.inc()
-            vm.data.add("XX $v")
+            vm.insert(DataItem(0, "XX $v", v))
         }) {
             Text(text = "Click")
         }
@@ -47,6 +54,6 @@ fun MainScreen(vm: TestViewModel = viewModel()) {
 }
 
 @Composable
-fun DataItem(data:String) {
+fun DataDetailItem(data: String) {
     Text(text = data)
 }
